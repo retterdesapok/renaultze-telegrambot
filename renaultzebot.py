@@ -8,11 +8,13 @@ from database_access import DatabaseAccess
 
 def start(update, context):
     update.message.reply_text('Hallo!\nUm Statusmeldungen zu erhalten, wird dein ZE-Services-Nutzername '
-                              'sowie dein Passwort benötigt. Das Passwort wird auf dem Server dieses Bots gespeichert, '
-                              'und über Telegram übertragen werden.'
-                              'Somit sind deine Nutzerdaten prinzipiell für Dritte einsehbar.\n'
-                              'Dieser Dienst wird zudem privat betrieben und befindet sich in der Beta-Phase, '
-                              'mit Fehlern, Ausfällen und nicht perfekter Sicherheit ist zu rechnen.\n'
+                              'sowie dein Passwort benötigt. Das Passwort wird auf dem Server dieses Bots gespeichert da die Renault-ZE-API leider regelmäßig neue Logins benötigt.'
+                              'Deine Nutzerdaten prinzipiell für Dritte einsehbar:\n'
+                              '* Mich (@retterdesapok)\n'
+                              '* Die Betreiber von Telegram\n'
+                              '* Jeden, der meinen Server hackt.\n\n'
+                              'Ich betreibe diesen Dienst privat und er befindet sich in der Beta-Phase, '
+                              'mit Fehlern, Ausfällen und nicht perfekter Sicherheit ist also zu rechnen. Ich übernehme keine Verantwortung dafür, wenn dein Auto eines Tages weg ist.\n'
                               'Wenn du dem zustimmst und den Bot nutzen möchtest, sende die Daten wie folgt:\n'
                               '/register max.musterman@example.com meinrenaultzepasswort')
 

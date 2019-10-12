@@ -130,7 +130,7 @@ def dump(update, context):
 
 def main():
     with open('token.txt', 'r') as file:
-        token = file.read()
+        token = file.read().rstrip()
     updater = Updater(token, use_context=True)
 
     # Get the dispatcher to register handlers

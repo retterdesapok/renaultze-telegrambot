@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 import json
 
+import requests
 import telegram
 from telegram.ext import *
 from renault_api import ZEServices
@@ -8,8 +9,8 @@ from database_access import DatabaseAccess
 
 def start(update, context):
     update.message.reply_text('Hallo!\nUm Statusmeldungen zu erhalten, wird dein ZE-Services-Nutzername '
-                              'sowie dein Passwort benötigt. Das Passwort wird auf dem Server dieses Bots gespeichert da die Renault-ZE-API leider regelmäßig neue Logins benötigt.'
-                              'Deine Nutzerdaten prinzipiell für Dritte einsehbar:\n'
+                              'sowie dein Passwort benötigt. Das Passwort wird auf dem Server dieses Bots gespeichert da die Renault-ZE-API leider regelmäßig neue Logins benötigt. '
+                              'Deine Nutzerdaten sind prinzipiell für Dritte einsehbar:\n'
                               '* Mich (@retterdesapok)\n'
                               '* Die Betreiber von Telegram\n'
                               '* Jeden, der meinen Server hackt.\n\n'
@@ -20,8 +21,6 @@ def start(update, context):
 
 
 def status(update, context):
-    kb_markup = telegram.ReplyKeyboardMarkup([[telegram.KeyboardButton('/status')], [telegram.KeyboardButton('/precondition')]])
-
     chat_id = update.message.chat_id
     da = DatabaseAccess()
     user = da.getUser(chat_id)
@@ -31,12 +30,11 @@ def status(update, context):
     if token is not None:
         newBatteryStatus = zes.apiCall('/api/vehicle/' + user['vin'] + '/battery')
         result = getStatusString(newBatteryStatus)
-        context.bot.sendMessage(chat_id, result, reply_markup=kb_markup)
+        context.bot.sendMessage(chat_id, result)
         da.updateApiResultForUser(chat_id, json.dumps(newBatteryStatus))
     else:
         context.bot.sendMessage(chat_id,
-                                "Could not connect to ZE Services, you have been logged out. Register again to continue receiving updates.",
-                                reply_markup=kb_markup)
+                                "Could not connect to ZE Services, you have been logged out. Register again to continue receiving updates.")
         da.deleteUser(chat_id)
 
 def register(update, context):
@@ -79,7 +77,6 @@ def precondition(update, context):
         context.bot.sendMessage(chat_id, "Could not connect to ZE Services, you have been logged out. Register again to continue receiving updates.")
         da.deleteUser(chat_id)
 
-
 def sendUpdates(context):
     da = DatabaseAccess()
     users = da.getUsers()
@@ -113,7 +110,8 @@ def getStatusString(status):
         return "🔋 100% - Ladung beendet (" + str(remaining_range) + " km)"
     else:
         if charging:
-            return "⚡ " + str(charge_level) + "% (⏳" + str(remaining_time) + " min)"
+            emissionsStr = getEmissionsString()
+            return "⚡ " + str(charge_level) + "% (⏳ " + str(remaining_time) + " min, 💨 " + emissionsStr + ")"
         elif plugged:
             return "❎ " + str(charge_level) + "% Ladung abgebrochen"
         else:
@@ -121,6 +119,12 @@ def getStatusString(status):
 
     return ""
 
+def emissions(update, context):
+    context.bot.send_chat_action(chat_id=update.message.chat_id,
+                                 action=telegram.ChatAction.TYPING)
+    emissionsStr = getEmissionsString()
+    chat_id = update.message.chat_id
+    context.bot.sendMessage(chat_id, "💨 " + emissionsStr)
 
 def dump(update, context):
     print("Database content:")
@@ -128,10 +132,19 @@ def dump(update, context):
     da.dumpUsersTable()
     print("---")
 
+def getEmissionsString():
+    with open('tokens.json') as f:
+        d = json.load(f)
+        url = "https://api.co2signal.com/v1/latest?countryCode=DE"
+        headers = {'auth-token': d['co2signal'], 'User-Agent': None}
+        emissionsApiResult = requests.get(url, headers=headers).json()
+        return str(round(emissionsApiResult['data']['carbonIntensity'])) + ' ' + emissionsApiResult['units']['carbonIntensity']
+    return "Keine Emissionsdaten verfügbar"
+
 def main():
-    with open('token.txt', 'r') as file:
-        token = file.read().rstrip()
-    updater = Updater(token, use_context=True)
+    with open('tokens.json') as f:
+        d = json.load(f)
+        updater = Updater(d['telegram'], use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -144,6 +157,7 @@ def main():
     dp.add_handler(CommandHandler("status", status, pass_chat_data=True))
     dp.add_handler(CommandHandler("precondition", precondition, pass_chat_data=True))
     dp.add_handler(CommandHandler("dump", dump, pass_chat_data=True))
+    dp.add_handler(CommandHandler("emissions", emissions, pass_chat_data=True))
 
 
     # Start the Bot

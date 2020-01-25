@@ -98,3 +98,8 @@ class ZEServices(object):
         url = ZEServices.servicesHost + path
         headers = {'Authorization': 'Bearer ' + self.token, 'User-Agent': None}
         return requests.get(url, headers=headers).json()
+
+    def postApiCall(self, path):
+        url = ZEServices.servicesHost + path
+        headers = {'Authorization': 'Bearer ' + self.token, 'User-Agent': None}
+        return requests.post(url, headers=headers).json()

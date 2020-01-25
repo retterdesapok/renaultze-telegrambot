@@ -71,7 +71,7 @@ def precondition(update, context):
     zes = ZEServices(da, chat_id, user['username'], None)
     token = zes.refreshTokenIfNecessary()
     if token is not None:
-        newBatteryStatus = zes.apiCall('/api/vehicle/' + user['vin'] + '/air-conditioning')
+        newBatteryStatus = zes.postApiCall('/api/vehicle/' + user['vin'] + '/air-conditioning')
         context.bot.sendMessage(chat_id, "Attempted to preheat.")
     else:
         context.bot.sendMessage(chat_id, "Could not connect to ZE Services, you have been logged out. Register again to continue receiving updates.")
